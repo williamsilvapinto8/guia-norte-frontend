@@ -1,6 +1,6 @@
 document.addEventListener('DOMContentLoaded', () => {
     const businessesContainer = document.getElementById('businessesContainer');
-    const API_BASE_URL = 'https://guianorte.cocrias.com.br/api'; // Usando HTTPS conforme discutido
+    const API_BASE_URL = 'https://api.guianorte.cocrias.com.br/api'; // Usando HTTPS conforme discutido
 
     // Função para verificar autenticação e redirecionar
     function checkAuthAndRedirect() {
