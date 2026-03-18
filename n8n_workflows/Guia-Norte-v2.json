@@ -1,0 +1,252 @@
+{
+  "name": "Guia-Norte-v2",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "diagnostico-ideacao",
+        "responseMode": "lastNode",
+        "options": {
+          "rawBody": true,
+          "responseContentType": " {     \"status\": \"ok\",     \"message\": \"Diagnóstico de ideação em processamento.\"   }"
+        }
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -64,
+        352
+      ],
+      "id": "fe155028-6439-499a-ba0a-fb1b6938394b",
+      "name": "Webhook Diagnostico Ideacao",
+      "webhookId": "2685ec4c-8caf-4b87-b87b-65fd66051133"
+    },
+    {
+      "parameters": {
+        "url": "=http://api.guianorte.cocrias.com.br/api/n8n/businesses/{{ $json.body.business_id }}/context",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-API-Key",
+              "value": "gn-n8n-api-key-7c9f1d4e-2026"
+            },
+            {
+              "name": "Accept",
+              "value": "application/json"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        144,
+        352
+      ],
+      "id": "02054a3a-ae10-48d2-9436-bc2b9a9b6d7e",
+      "name": "HTTP → Contexto Negocio"
+    },
+    {
+      "parameters": {
+        "jsCode": "const ctx = $json; // resposta do contexto\n\nconst business = ctx;\nconst ideationForm = ctx.latest_form_responses?.ideation_form_response || null;\n\nif (!ideationForm) {\n  throw new Error('Nenhum FormResponse de ideação encontrado para este negócio.');\n}\n\nconst ideationData = ideationForm.data;\n\n// Aqui você pode montar um prompt baseado no \"01_Prompt_Diagnóstico.docx\".\n// Vou montar um esqueleto simplificado; depois você refina o texto.\n\nconst prompt = `\nVocê é um consultor de negócios da plataforma Guia Norte, especializado em pequenos comércios e serviços.\n\nContexto do negócio:\n- Nome do negócio: ${business.name || 'não informado'}\n- Segmento: ${business.segment || 'não informado'}\n- Tipo: ${business.business_type || 'não informado'}\n- Cidade/UF: ${business.city || ''} / ${business.state || ''}\n\nDados do formulário de Ideação (JSON):\n${JSON.stringify(ideationData, null, 2)}\n\nTarefa:\n1. Faça um resumo amigável da ideia (2–3 frases).\n2. Analise a maturidade da ideia e classifique como uma destas opções:\n   - \"Ideia ainda muito crua\"\n   - \"Ideia em desenvolvimento\"\n   - \"Ideia bem estruturada, pronta para planejar\"\n3. Aponte 4–6 pontos cegos ou riscos.\n4. Sugira 3–5 próximos passos práticos antes de ir para o Plano de Negócios.\n\nResponda em português, em formato de texto organizado com títulos e listas.\n`;\n\nreturn [{\n  json: {\n    business_id: business.id,\n    form_response_id: ideationForm.id,\n    prompt,\n  },\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        352,
+        352
+      ],
+      "id": "57ee0fcc-9bdd-40b3-a741-7679fee3dbc5",
+      "name": "Montar Prompt Ideacao"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{$json.prompt}}",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        560,
+        352
+      ],
+      "id": "723d24ee-4aaf-45b8-85d1-49fe0e4c2e6c",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": "llama-3.1-8b-instant",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGroq",
+      "typeVersion": 1,
+      "position": [
+        560,
+        528
+      ],
+      "id": "b1f9f38d-a959-4b17-90aa-945ee2cad886",
+      "name": "Groq Chat Model",
+      "credentials": {
+        "groqApi": {
+          "id": "jthEJEBzdAJIsRrM",
+          "name": "Groq account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://api.guianorte.cocrias.com.br/api/n8n/diagnoses/",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "X-API-Key",
+              "value": "gn-n8n-api-key-7c9f1d4e-2026"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "=json",
+        "bodyParameters": {
+          "parameters": [
+            {}
+          ]
+        },
+        "jsonBody": "={{ {\n  business_id: $('Webhook Diagnostico Ideacao').item.json.body.business_id,\n  form_response_id: $('Webhook Diagnostico Ideacao').item.json.form_response_id,\n  diagnosis_type: $json.diagnosis_type,\n  diagnosis_version: $json.diagnosis_version,\n  status: $json.status,\n  content: $json.content,\n  raw_response: $json.raw_response,\n  is_free: $json.is_free,\n  model_name: $json.model_name\n} }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        1120,
+        352
+      ],
+      "id": "46ba7515-5982-43e0-aad8-433d1a55c744",
+      "name": "HTTP → Salvar Diagnostico Ideacao"
+    },
+    {
+      "parameters": {
+        "jsCode": "const aiOutput = $json; // Saída do node AI Agent\n\n// O campo 'output' do AI Agent contém o texto do diagnóstico\nconst diagnosisContent = aiOutput.output;\n\n// O raw_response deve ser o JSON completo que o AI Agent retornou\n// Isso garante que ele seja um objeto JSON válido\nconst rawResponseData = aiOutput;\n\n// Pegamos os dados que vieram dos nodes anteriores (Webhook, Contexto, Prompt)\n// e que foram passados adiante pelo AI Agent (se configurado para isso)\nconst businessId = aiOutput.business_id;\nconst formResponseId = aiOutput.form_response_id;\n\n// Monta o objeto final para o POST no Django\nreturn [{\n  json: {\n    business_id: businessId,\n    form_response_id: formResponseId,\n    diagnosis_type: \"ideation\", // Ou {{ $json.diagnosis_type }} se vier de um node anterior\n    diagnosis_version: \"1.0\",\n    status: \"done\",\n    content: diagnosisContent, // Texto do diagnóstico\n    raw_response: rawResponseData, // Objeto JSON completo da resposta da IA\n    is_free: true,\n    model_name: \"groq-agent\" // Nome do modelo que você usou (Groq)\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        912,
+        352
+      ],
+      "id": "11f4b9b1-7a55-4aca-957b-566f5ba26ad9",
+      "name": "Preparar Diagnostico para POST"
+    },
+    {
+      "parameters": {
+        "content": "## Parte 02 - Diagnóstico",
+        "height": 400,
+        "width": 1472,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -112,
+        272
+      ],
+      "typeVersion": 1,
+      "id": "ede179a0-25b9-4999-963a-4bdf46f1b007",
+      "name": "Sticky Note1"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook Diagnostico Ideacao": {
+      "main": [
+        [
+          {
+            "node": "HTTP → Contexto Negocio",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP → Contexto Negocio": {
+      "main": [
+        [
+          {
+            "node": "Montar Prompt Ideacao",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Montar Prompt Ideacao": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Groq Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Preparar Diagnostico para POST",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Preparar Diagnostico para POST": {
+      "main": [
+        [
+          {
+            "node": "HTTP → Salvar Diagnostico Ideacao",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": false
+  },
+  "versionId": "299e7149-ae46-4f11-82da-8eee63bf5ef8",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "25a5ed393fc4b369f27c3ab92c5e076e7818b283f4e43c8ef4a545aa76379255"
+  },
+  "id": "pqkMUvIFe0Upm7D5",
+  "tags": []
+}

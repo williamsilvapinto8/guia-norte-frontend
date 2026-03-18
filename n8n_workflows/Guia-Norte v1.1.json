@@ -1,0 +1,200 @@
+{
+  "name": "Guia-Norte v1.1",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "captura-inicial",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        512,
+        128
+      ],
+      "id": "aa8ae0a8-b858-4cff-a3fb-35a0568aa759",
+      "name": "Webhook1",
+      "webhookId": "86215fac-943a-4efd-ab67-b1cd0de66b7c"
+    },
+    {
+      "parameters": {
+        "fromEmail": "notifications@cocrias.com.br",
+        "toEmail": "={{ $('Webhook1').item.json.body.email }}",
+        "subject": "Bem-vindo(a) à Guia Norte – seu negócio já está no mapa",
+        "html": "=Oi, <strong>{{ $node[\"Webhook1\"].json.body.nome }}</strong>!<br><br>\n\nQue bom ter você com a gente na <strong>Guia Norte</strong>.<br><br>\n\nRecebemos seus dados e já criamos sua conta e o cadastro do seu negócio:<br>\n<ul>\n  <li><strong>Nome do negócio:</strong> {{ $node[\"Webhook1\"].json.body.nome_negocio }}</li>\n  <li><strong>Cidade/UF:</strong> {{ $node[\"Webhook1\"].json.body.cidade }} / {{ $node[\"Webhook1\"].json.body.estado }}</li>\n  <li><strong>Tipo:</strong> {{\n    $node[\"Webhook1\"].json.body.tipo_negocio === 'fisico'\n      ? 'Físico (loja, consultório, escritório)'\n      : $node[\"Webhook1\"].json.body.tipo_negocio === 'online'\n        ? 'Online'\n        : 'Híbrido (físico + online)'\n  }}</li>\n</ul>\n\nA partir de agora, vamos usar essas informações para te guiar nos próximos passos do desenvolvimento do seu negócio.<br><br>\n\nEm breve você vai receber novos materiais e orientações personalizadas para o momento em que o seu negócio está hoje.<br><br>\n\nSe tiver qualquer dúvida, é só responder este e-mail.<br><br>\n\nAbraço,<br>\n<strong>Time Guia Norte</strong>",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        1136,
+        128
+      ],
+      "id": "08268c85-f63a-40da-bb0a-df22a8153b8c",
+      "name": "Send email1",
+      "webhookId": "2dc7157b-2cb7-4edb-96c3-263a026a7e0b",
+      "credentials": {
+        "smtp": {
+          "id": "ltey6gQXyGIUQta0",
+          "name": "SMTP account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://api.guianorte.cocrias.com.br/api/auth/register/",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "multipart-form-data",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "username",
+              "value": "={{ $json.body.nome }}"
+            },
+            {
+              "name": "email",
+              "value": "={{ $json.body.email }}"
+            },
+            {
+              "name": "password",
+              "value": "={{ $json.body.email + '-GnTemp#2026' }}"
+            },
+            {
+              "name": "password_confirm",
+              "value": "={{ $json.body.email + '-GnTemp#2026' }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        720,
+        128
+      ],
+      "id": "ccb436bd-32f0-4e56-b6af-c1135c13d355",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://api.guianorte.cocrias.com.br/api/businesses/",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "= Bearer {{ $json.tokens.access }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "name",
+              "value": "={{ $('Webhook1').item.json.body.nome_negocio }}"
+            },
+            {
+              "name": "segment",
+              "value": "={{ $('Webhook1').item.json.body.segmento }}"
+            },
+            {
+              "name": "business_type",
+              "value": "={{ $node[\"Webhook1\"].json.body.tipo_negocio === 'fisico' ? 'physical' : $node[\"Webhook1\"].json.body.tipo_negocio === 'online' ? 'online' : 'hybrid' }}"
+            },
+            {
+              "name": "stage",
+              "value": "={{ $node[\"Webhook1\"].json.body.fase_atual_negocio === 'ideia' ? 'ideation' : $node[\"Webhook1\"].json.body.fase_atual_negocio === 'abertura' ? 'plan' : 'operation' }}"
+            },
+            {
+              "name": "city",
+              "value": "={{ $('Webhook1').item.json.body.cidade }}"
+            },
+            {
+              "name": "state",
+              "value": "={{ $('Webhook1').item.json.body.estado }}"
+            },
+            {
+              "name": "has_cnpj",
+              "value": "={{ $node[\"Webhook1\"].json.body.possui_cnpj === 'sim' }}"
+            },
+            {
+              "name": "revenue_range",
+              "value": "={{ $('Webhook1').item.json.body.faixa_faturamento }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        928,
+        128
+      ],
+      "id": "ee92b58c-8e35-4073-bd8f-65c8a1f50d1d",
+      "name": "HTTP Request1"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook1": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request1": {
+      "main": [
+        [
+          {
+            "node": "Send email1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": false
+  },
+  "versionId": "b20267eb-dfe5-4af3-8ed5-aab315ec20b8",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "25a5ed393fc4b369f27c3ab92c5e076e7818b283f4e43c8ef4a545aa76379255"
+  },
+  "id": "jlOcP1sIaBq8jKgd",
+  "tags": []
+}
