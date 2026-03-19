@@ -11,7 +11,7 @@ import Landing from './pages/Landing'
 function App() {
   return (
     <AuthProvider>
-      <BrowserRouter>
+      <BrowserRouter basename="/guia-norte-frontend/"> {/* <-- Adição da propriedade basename aqui */}
         <Routes>
           <Route path="/" element={<Landing />} />
           <Route path="/login" element={<Login />} />
