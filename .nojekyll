@@ -1,1 +1,3 @@
-
+git add .nojekyll
+git commit -m "feat: Adiciona .nojekyll para desabilitar Jekyll"
+git push origin main
