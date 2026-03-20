@@ -4,8 +4,8 @@ import react from '@vitejs/plugin-react'
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [react()],
-  base: '/guia-norte-frontend/', // <--- Mantenha esta linha com o nome do seu repositório
+  base: './', // <--- Mude esta linha para um caminho relativo
   build: {
-    outDir: 'docs', // <--- Mantenha esta linha
+    outDir: 'docs',
   }
 })
